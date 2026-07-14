@@ -1,5 +1,5 @@
 // 全局状态管理器，避免循环依赖
-import { MY_PEER_ID } from './constants.js';
+import { MY_PEER_ID, MY_PEER_ID_WS2 } from './constants.js';
 
 // 全局 peer 中心状态
 const peerCenterStateByGroup = new Map();
@@ -113,9 +113,10 @@ export function buildPeerCenterResponseMap(groupKey, state, peerManager) {
     // 确保 directPeers 字段存在
     if (!out[key].directPeers) out[key].directPeers = {};
     
-    // 如果这是直接连接的 peer，添加与服务器的连接信息
+    // 如果这是直接连接的 peer，添加与两台服务器的连接信息
     if (directPeers.includes(peerId)) {
       out[key].directPeers[String(MY_PEER_ID)] = { latencyMs: 0 };
+      out[key].directPeers[String(MY_PEER_ID_WS2)] = { latencyMs: 0 };
     }
     
     // 如果这个 peer 在全局映射中有子设备信息，保留这些信息

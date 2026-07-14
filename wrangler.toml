@@ -9,6 +9,15 @@ compatibility_flags = ["nodejs_compat"]
 # ws目录
 WS_PATH = "ws"
 
+# ws2目录（第二节点，客户端当作独立服务器连接，与 /ws 错开断开时间以规避 100s 限制）
+WS2_PATH = "ws2"
+
+# 服务端主动断开时间（毫秒）。Cloudflare Workers 免费 WS 最长 100s，这里 90s 留出重连余量
+WS_DISCONNECT_INTERVAL_MS = "90000"
+# /ws2 第一次连接提前到 45s 断开，之后每 90s 断开一次，从而与 /ws 错开 45s
+WS2_FIRST_DISCONNECT_INTERVAL_MS = "45000"
+WS2_DISCONNECT_INTERVAL_MS = "90000"
+
 # 转发，0为关闭，1为开启
 EASYTIER_DISABLE_RELAY = "0"
 

@@ -24,16 +24,27 @@ export default {
       return this.handleNetworkAdmin(request, env);
     }
 
-    const wsPath = '/' + env.WS_PATH || '/ws';
-    if (pathname === wsPath || pathname === wsPath + '/') {
+    const wsPath = '/' + (env.WS_PATH || 'ws');
+    const ws2Path = '/' + (env.WS2_PATH || 'ws2');
+    const isWs = pathname === wsPath || pathname === wsPath + '/';
+    const isWs2 = pathname === ws2Path || pathname === ws2Path + '/';
+    if (isWs || isWs2) {
       if (request.headers.get('Upgrade') !== 'websocket') {
         return new Response('Expected WebSocket upgrade', { status: 400 });
       }
 
       const roomId = searchParams.get('room') || 'default';
+      // /ws and /ws2 share the same Durable Object so peers on both endpoints
+      // can see each other and exchange routing info. We tag the request with
+      // the endpoint type via a query param so the DO knows which identity to use.
+      const endpointType = isWs2 ? 'ws2' : 'ws';
+      const forwardUrl = new URL(request.url);
+      if (!searchParams.has('endpoint')) {
+        forwardUrl.searchParams.set('endpoint', endpointType);
+      }
       const options = env.LOCATION_HINT ? { locationHint: env.LOCATION_HINT } : {};
       const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId), options);
-      return roomStub.fetch(request);
+      return roomStub.fetch(new Request(forwardUrl, request));
     }
 
     return new Response('Not found', { status: 404 });

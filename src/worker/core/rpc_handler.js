@@ -1,4 +1,4 @@
-import { MY_PEER_ID, PacketType } from './constants.js';
+import { MY_PEER_ID, MY_PEER_ID_WS2, PacketType } from './constants.js';
 import { createHeader } from './packet.js';
 import { getPeerManager } from './peer_manager.js';
 import { wrapPacket, randomU64String, sha256 } from './crypto.js';
@@ -109,7 +109,7 @@ function sendRpcResponse(ws, toPeerId, reqRpcPacket, types, responseBodyBytes) {
   const txIdForEncoding = toLongForProto(txId);
 
   const rpcRespPacket = {
-    fromPeer: MY_PEER_ID,
+    fromPeer: ws.serverPeerId || MY_PEER_ID,
     toPeer: toPeerId,
     transactionId: txIdForEncoding,
     descriptor: reqRpcPacket.descriptor,
@@ -121,7 +121,7 @@ function sendRpcResponse(ws, toPeerId, reqRpcPacket, types, responseBodyBytes) {
     compressionInfo,
   };
   const rpcPacketBytes = types.RpcPacket.encode(rpcRespPacket).finish();
-  const buf = wrapPacket(createHeader, MY_PEER_ID, toPeerId, PacketType.RpcResp, rpcPacketBytes, ws);
+  const buf = wrapPacket(createHeader, ws.serverPeerId || MY_PEER_ID, toPeerId, PacketType.RpcResp, rpcPacketBytes, ws);
   try {
     ws.send(buf);
     console.log(`RpcResp -> to=${toPeerId} txLen=${buf.length} txTransaction=${txIdValue} SUCCESS`);
@@ -366,19 +366,19 @@ function handleSyncRouteInfo(ws, fromPeerId, reqRpcPacket, syncReq, types) {
     console.log(`[SyncRoute] Processing ${syncReq.peerInfos.items.length} peer infos from ${fromPeerId}`);
     
     syncReq.peerInfos.items.forEach(info => {
-      if (info.peerId !== MY_PEER_ID) {
+      if (info.peerId !== MY_PEER_ID && info.peerId !== MY_PEER_ID_WS2) {
         const infos = pm()._getPeerInfosMap(groupKey, false);
         const isNew = !infos || !infos.has(info.peerId);
-        
+
         // 如果客户端提供了有效的 STUN 信息，保留它
         // 否则使用默认的 P2P 友好的 NAT 类型
         if (!info.udpStunInfo || info.udpStunInfo === 0) {
           info.udpStunInfo = 3; // 默认设置为 FullCone NAT，鼓励 P2P 打洞
         }
-        
+
         pm().updatePeerInfo(groupKey, info.peerId, info);
         if (isNew) hasNewPeers = true;
-        
+
         // 检查是否是子设备（不是直接连接的 peer）
         const directPeers = pm().listPeerIdsInGroup(groupKey);
         if (!directPeers.includes(info.peerId)) {
@@ -388,7 +388,7 @@ function handleSyncRouteInfo(ws, fromPeerId, reqRpcPacket, syncReq, types) {
           console.log(`[SyncRoute] Updated peer ${info.peerId}, NAT type: ${info.udpStunInfo}`);
         }
       }
-      if (info.peerId === MY_PEER_ID) {
+      if (info.peerId === MY_PEER_ID || info.peerId === MY_PEER_ID_WS2) {
         pm().updatePeerInfo(groupKey, info.peerId, info);
       }
     });
@@ -402,7 +402,7 @@ function handleSyncRouteInfo(ws, fromPeerId, reqRpcPacket, syncReq, types) {
     // 记录从当前 peer 发现的子设备
     if (syncReq.peerInfos && syncReq.peerInfos.items) {
       syncReq.peerInfos.items.forEach(info => {
-        if (info.peerId !== MY_PEER_ID && info.peerId !== fromPeerId) {
+        if (info.peerId !== MY_PEER_ID && info.peerId !== MY_PEER_ID_WS2 && info.peerId !== fromPeerId) {
           directPeers[String(info.peerId)] = { latencyMs: 10 }; // 默认延迟
         }
       });

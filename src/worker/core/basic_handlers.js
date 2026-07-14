@@ -13,7 +13,7 @@
  * @version 2.0.0
  */
 
-import { MAGIC, VERSION, MY_PEER_ID, PacketType } from './constants.js';
+import { MAGIC, VERSION, MY_PEER_ID, MY_PEER_ID_WS2, PacketType } from './constants.js';
 import { createHeader } from './packet.js';
 import { getPeerManager } from './peer_manager.js';
 import { wrapPacket, randomU64String } from './crypto.js';
@@ -117,20 +117,24 @@ function handleHandshake(ws, header, payload, types) {
 
     ws.domainName = clientNetworkName;
 
+    // 本连接的服务器 peerId：/ws 用 MY_PEER_ID，/ws2 用 MY_PEER_ID_WS2，客户端视作两台独立服务器
+    const myPeerId = ws.serverPeerId || MY_PEER_ID;
+
     // 【关键修复 5】：移除 features 字段，防止官方客户端严格校验导致拒收
     const respPayload = {
       magic: MAGIC,
-      myPeerId: MY_PEER_ID,
+      myPeerId,
       version: VERSION,
       networkName: serverNetworkName,
       networkSecretDigrest: new Uint8Array(32) // 注意这里官方 proto 拼写是 Digrest
     };
-    
+
     console.log(`Handshake response payload:`, {
       magic: respPayload.magic,
       myPeerId: respPayload.myPeerId,
       version: respPayload.version,
       networkName: respPayload.networkName,
+      endpoint: ws.endpointType,
       networkSecretDigrestLength: respPayload.networkSecretDigrest ? respPayload.networkSecretDigrest.length : 0
     });
 
@@ -138,7 +142,7 @@ function handleHandshake(ws, header, payload, types) {
     ws.peerId = req.myPeerId;
     const pm = getPeerManager();
     pm.addPeer(req.myPeerId, ws);
-    
+
     // 更新网络组活动状态
     updateNetworkGroupActivity(groupKey);
     pm.updatePeerInfo(ws.groupKey, req.myPeerId, {
@@ -153,7 +157,7 @@ function handleHandshake(ws, header, payload, types) {
     ws.crypto = { enabled: false };
 
     const respBuffer = types.HandshakeRequest.encode(respPayload).finish();
-    const respHeader = createHeader(MY_PEER_ID, req.myPeerId, PacketType.HandShake, respBuffer.length);
+    const respHeader = createHeader(myPeerId, req.myPeerId, PacketType.HandShake, respBuffer.length);
     
     // 改进发送逻辑：添加延迟确保客户端准备好接收
     setTimeout(() => {
@@ -209,14 +213,16 @@ function handleHandshake(ws, header, payload, types) {
 }
 
 function handlePing(ws, header, payload) {
-  const msg = wrapPacket(createHeader, MY_PEER_ID, header.fromPeerId, PacketType.Pong, payload, ws);
+  const myPeerId = ws.serverPeerId || MY_PEER_ID;
+  const msg = wrapPacket(createHeader, myPeerId, header.fromPeerId, PacketType.Pong, payload, ws);
   ws.send(msg);
 }
 
 function handleForwarding(sourceWs, header, fullMessage, types) {
   const targetPeerId = header.toPeerId;
   const pm = getPeerManager();
-  const targetWs = pm.getPeerWs(targetPeerId, sourceWs && sourceWs.groupKey);
+  // 该 peerId 可能同时有 /ws 与 /ws2 两条连接，任选一条可用连接转发（优先非当前连接）
+  const targetWs = pm.getPeerWs(targetPeerId, sourceWs && sourceWs.groupKey, sourceWs);
 
   if (targetWs && targetWs.readyState === WS_OPEN) {
     const srcGroup = sourceWs && sourceWs.groupKey;
