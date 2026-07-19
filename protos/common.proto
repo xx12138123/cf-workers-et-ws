@@ -203,6 +203,13 @@ message PeerFeatureFlag {
   bool avoid_relay_data = 2;
   bool kcp_input = 3;
   bool no_relay_kcp = 4;
+  bool support_conn_list_sync = 5;
+  bool quic_input = 6;
+  bool no_relay_quic = 7;
+  bool is_credential_peer = 8;
+  bool need_p2p = 9;
+  bool disable_p2p = 10;
+  bool ipv6_public_addr_provider = 11;
 }
 
 enum SocketType {

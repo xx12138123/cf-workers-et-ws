@@ -79,11 +79,23 @@ function makeStubPeerInfo(peerId, networkLength) {
     cost: 1,
     hostname: "CF-ETSV",
     easytierVersion: "cf-et-ws",
-    featureFlag: { isPublicServer: false, avoidRelayData: false, kcpInput: false, noRelayKcp: false },
+    featureFlag: {
+      isPublicServer: false,
+      avoidRelayData: false,
+      kcpInput: false,
+      noRelayKcp: false,
+      supportConnListSync: false,
+      quicInput: false,
+      noRelayQuic: false,
+      isCredentialPeer: false,
+      needP2p: false,
+      disableP2p: false,
+      ipv6PublicAddrProvider: false,
+    },
     networkLength: Number(networkLength || 24),
     peerRouteId: randomU64String(),
     groups: [],
-    udpStunInfo: 1, // 默认设置为 OpenInternet，鼓励 P2P 打洞
+    udpStunInfo: 0, // Unknown: 不臆造 NAT 类型，让对端按实际情况处理
   };
 }
 
@@ -98,13 +110,20 @@ function makeServerPeerInfo(peerId) {
       isPublicServer: true,
       avoidRelayData: false,
       kcpInput: false,
-      noRelayKcp: false
+      noRelayKcp: false,
+      supportConnListSync: false,
+      quicInput: false,
+      noRelayQuic: false,
+      isCredentialPeer: false,
+      needP2p: false,
+      disableP2p: false,
+      ipv6PublicAddrProvider: false,
     },
     networkLength: Number(process.env.EASYTIER_NETWORK_LENGTH || 24),
     easytierVersion: process.env.EASYTIER_VERSION || "cf-et-ws",
     lastUpdate: { seconds: Math.floor(Date.now() / 1000), nanos: 0 },
     hostname: process.env.EASYTIER_HOSTNAME || "CF-ETSV",
-    udpStunInfo: 1, // 服务器设置为 OpenInternet，支持 P2P 打洞
+    udpStunInfo: 1, // 服务器设置为 OpenInternet，作为中继节点可达
     peerRouteId: randomU64String(),
     groups: [],
   };

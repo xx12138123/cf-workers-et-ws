@@ -370,10 +370,14 @@ function handleSyncRouteInfo(ws, fromPeerId, reqRpcPacket, syncReq, types) {
         const infos = pm()._getPeerInfosMap(groupKey, false);
         const isNew = !infos || !infos.has(info.peerId);
 
-        // 如果客户端提供了有效的 STUN 信息，保留它
-        // 否则使用默认的 P2P 友好的 NAT 类型
-        if (!info.udpStunInfo || info.udpStunInfo === 0) {
-          info.udpStunInfo = 3; // 默认设置为 FullCone NAT，鼓励 P2P 打洞
+        // 保留客户端上报的真实 NAT 类型 (udpStunInfo)。
+        // 之前的实现强制设为 FullCone(3) "鼓励 P2P 打洞"，这会：
+        // 1. 覆盖客户端真实的 NAT 类型，导致对端用错误的打洞策略
+        // 2. 对于 disable_p2p=true 的客户端，对端仍会尝试 P2P，违背强制中转意图
+        // 现在只在客户端未上报（值为 0/Unknown）时才设为 OpenInternet(1)，
+        // 避免对端因为 Unknown 而完全放弃直连尝试。
+        if (info.udpStunInfo === undefined || info.udpStunInfo === null || info.udpStunInfo === 0) {
+          info.udpStunInfo = 1; // OpenInternet: 最低限度让对端能尝试，但不覆盖真实值
         }
 
         pm().updatePeerInfo(groupKey, info.peerId, info);
@@ -383,9 +387,9 @@ function handleSyncRouteInfo(ws, fromPeerId, reqRpcPacket, syncReq, types) {
         const directPeers = pm().listPeerIdsInGroup(groupKey);
         if (!directPeers.includes(info.peerId)) {
           hasSubPeers = true;
-          console.log(`[SyncRoute] Discovered sub-peer ${info.peerId} via ${fromPeerId}, NAT type: ${info.udpStunInfo}`);
+          console.log(`[SyncRoute] Discovered sub-peer ${info.peerId} via ${fromPeerId}, NAT type: ${info.udpStunInfo}, disable_p2p: ${info.featureFlag && info.featureFlag.disableP2p}`);
         } else {
-          console.log(`[SyncRoute] Updated peer ${info.peerId}, NAT type: ${info.udpStunInfo}`);
+          console.log(`[SyncRoute] Updated peer ${info.peerId}, NAT type: ${info.udpStunInfo}, disable_p2p: ${info.featureFlag && info.featureFlag.disableP2p}`);
         }
       }
       if (info.peerId === MY_PEER_ID || info.peerId === MY_PEER_ID_WS2) {

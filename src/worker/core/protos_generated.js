@@ -5703,6 +5703,13 @@ export const common = $root.common = (() => {
          * @property {boolean|null} [avoidRelayData] PeerFeatureFlag avoidRelayData
          * @property {boolean|null} [kcpInput] PeerFeatureFlag kcpInput
          * @property {boolean|null} [noRelayKcp] PeerFeatureFlag noRelayKcp
+         * @property {boolean|null} [supportConnListSync] PeerFeatureFlag supportConnListSync
+         * @property {boolean|null} [quicInput] PeerFeatureFlag quicInput
+         * @property {boolean|null} [noRelayQuic] PeerFeatureFlag noRelayQuic
+         * @property {boolean|null} [isCredentialPeer] PeerFeatureFlag isCredentialPeer
+         * @property {boolean|null} [needP2p] PeerFeatureFlag needP2p
+         * @property {boolean|null} [disableP2p] PeerFeatureFlag disableP2p
+         * @property {boolean|null} [ipv6PublicAddrProvider] PeerFeatureFlag ipv6PublicAddrProvider
          */
 
         /**
@@ -5753,6 +5760,62 @@ export const common = $root.common = (() => {
         PeerFeatureFlag.prototype.noRelayKcp = false;
 
         /**
+         * PeerFeatureFlag supportConnListSync.
+         * @member {boolean} supportConnListSync
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.supportConnListSync = false;
+
+        /**
+         * PeerFeatureFlag quicInput.
+         * @member {boolean} quicInput
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.quicInput = false;
+
+        /**
+         * PeerFeatureFlag noRelayQuic.
+         * @member {boolean} noRelayQuic
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.noRelayQuic = false;
+
+        /**
+         * PeerFeatureFlag isCredentialPeer.
+         * @member {boolean} isCredentialPeer
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.isCredentialPeer = false;
+
+        /**
+         * PeerFeatureFlag needP2p.
+         * @member {boolean} needP2p
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.needP2p = false;
+
+        /**
+         * PeerFeatureFlag disableP2p.
+         * @member {boolean} disableP2p
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.disableP2p = false;
+
+        /**
+         * PeerFeatureFlag ipv6PublicAddrProvider.
+         * @member {boolean} ipv6PublicAddrProvider
+         * @memberof common.PeerFeatureFlag
+         * @instance
+         */
+        PeerFeatureFlag.prototype.ipv6PublicAddrProvider = false;
+
+        /**
          * Creates a new PeerFeatureFlag instance using the specified properties.
          * @function create
          * @memberof common.PeerFeatureFlag
@@ -5784,6 +5847,20 @@ export const common = $root.common = (() => {
                 writer.uint32(/* id 3, wireType 0 =*/24).bool(message.kcpInput);
             if (message.noRelayKcp != null && Object.hasOwnProperty.call(message, "noRelayKcp"))
                 writer.uint32(/* id 4, wireType 0 =*/32).bool(message.noRelayKcp);
+            if (message.supportConnListSync != null && Object.hasOwnProperty.call(message, "supportConnListSync"))
+                writer.uint32(/* id 5, wireType 0 =*/40).bool(message.supportConnListSync);
+            if (message.quicInput != null && Object.hasOwnProperty.call(message, "quicInput"))
+                writer.uint32(/* id 6, wireType 0 =*/48).bool(message.quicInput);
+            if (message.noRelayQuic != null && Object.hasOwnProperty.call(message, "noRelayQuic"))
+                writer.uint32(/* id 7, wireType 0 =*/56).bool(message.noRelayQuic);
+            if (message.isCredentialPeer != null && Object.hasOwnProperty.call(message, "isCredentialPeer"))
+                writer.uint32(/* id 8, wireType 0 =*/64).bool(message.isCredentialPeer);
+            if (message.needP2p != null && Object.hasOwnProperty.call(message, "needP2p"))
+                writer.uint32(/* id 9, wireType 0 =*/72).bool(message.needP2p);
+            if (message.disableP2p != null && Object.hasOwnProperty.call(message, "disableP2p"))
+                writer.uint32(/* id 10, wireType 0 =*/80).bool(message.disableP2p);
+            if (message.ipv6PublicAddrProvider != null && Object.hasOwnProperty.call(message, "ipv6PublicAddrProvider"))
+                writer.uint32(/* id 11, wireType 0 =*/88).bool(message.ipv6PublicAddrProvider);
             return writer;
         };
 
@@ -5836,6 +5913,34 @@ export const common = $root.common = (() => {
                         message.noRelayKcp = reader.bool();
                         break;
                     }
+                case 5: {
+                        message.supportConnListSync = reader.bool();
+                        break;
+                    }
+                case 6: {
+                        message.quicInput = reader.bool();
+                        break;
+                    }
+                case 7: {
+                        message.noRelayQuic = reader.bool();
+                        break;
+                    }
+                case 8: {
+                        message.isCredentialPeer = reader.bool();
+                        break;
+                    }
+                case 9: {
+                        message.needP2p = reader.bool();
+                        break;
+                    }
+                case 10: {
+                        message.disableP2p = reader.bool();
+                        break;
+                    }
+                case 11: {
+                        message.ipv6PublicAddrProvider = reader.bool();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -5883,6 +5988,27 @@ export const common = $root.common = (() => {
             if (message.noRelayKcp != null && message.hasOwnProperty("noRelayKcp"))
                 if (typeof message.noRelayKcp !== "boolean")
                     return "noRelayKcp: boolean expected";
+            if (message.supportConnListSync != null && message.hasOwnProperty("supportConnListSync"))
+                if (typeof message.supportConnListSync !== "boolean")
+                    return "supportConnListSync: boolean expected";
+            if (message.quicInput != null && message.hasOwnProperty("quicInput"))
+                if (typeof message.quicInput !== "boolean")
+                    return "quicInput: boolean expected";
+            if (message.noRelayQuic != null && message.hasOwnProperty("noRelayQuic"))
+                if (typeof message.noRelayQuic !== "boolean")
+                    return "noRelayQuic: boolean expected";
+            if (message.isCredentialPeer != null && message.hasOwnProperty("isCredentialPeer"))
+                if (typeof message.isCredentialPeer !== "boolean")
+                    return "isCredentialPeer: boolean expected";
+            if (message.needP2p != null && message.hasOwnProperty("needP2p"))
+                if (typeof message.needP2p !== "boolean")
+                    return "needP2p: boolean expected";
+            if (message.disableP2p != null && message.hasOwnProperty("disableP2p"))
+                if (typeof message.disableP2p !== "boolean")
+                    return "disableP2p: boolean expected";
+            if (message.ipv6PublicAddrProvider != null && message.hasOwnProperty("ipv6PublicAddrProvider"))
+                if (typeof message.ipv6PublicAddrProvider !== "boolean")
+                    return "ipv6PublicAddrProvider: boolean expected";
             return null;
         };
 
@@ -5906,6 +6032,20 @@ export const common = $root.common = (() => {
                 message.kcpInput = Boolean(object.kcpInput);
             if (object.noRelayKcp != null)
                 message.noRelayKcp = Boolean(object.noRelayKcp);
+            if (object.supportConnListSync != null)
+                message.supportConnListSync = Boolean(object.supportConnListSync);
+            if (object.quicInput != null)
+                message.quicInput = Boolean(object.quicInput);
+            if (object.noRelayQuic != null)
+                message.noRelayQuic = Boolean(object.noRelayQuic);
+            if (object.isCredentialPeer != null)
+                message.isCredentialPeer = Boolean(object.isCredentialPeer);
+            if (object.needP2p != null)
+                message.needP2p = Boolean(object.needP2p);
+            if (object.disableP2p != null)
+                message.disableP2p = Boolean(object.disableP2p);
+            if (object.ipv6PublicAddrProvider != null)
+                message.ipv6PublicAddrProvider = Boolean(object.ipv6PublicAddrProvider);
             return message;
         };
 
@@ -5927,6 +6067,13 @@ export const common = $root.common = (() => {
                 object.avoidRelayData = false;
                 object.kcpInput = false;
                 object.noRelayKcp = false;
+                object.supportConnListSync = false;
+                object.quicInput = false;
+                object.noRelayQuic = false;
+                object.isCredentialPeer = false;
+                object.needP2p = false;
+                object.disableP2p = false;
+                object.ipv6PublicAddrProvider = false;
             }
             if (message.isPublicServer != null && message.hasOwnProperty("isPublicServer"))
                 object.isPublicServer = message.isPublicServer;
@@ -5936,6 +6083,20 @@ export const common = $root.common = (() => {
                 object.kcpInput = message.kcpInput;
             if (message.noRelayKcp != null && message.hasOwnProperty("noRelayKcp"))
                 object.noRelayKcp = message.noRelayKcp;
+            if (message.supportConnListSync != null && message.hasOwnProperty("supportConnListSync"))
+                object.supportConnListSync = message.supportConnListSync;
+            if (message.quicInput != null && message.hasOwnProperty("quicInput"))
+                object.quicInput = message.quicInput;
+            if (message.noRelayQuic != null && message.hasOwnProperty("noRelayQuic"))
+                object.noRelayQuic = message.noRelayQuic;
+            if (message.isCredentialPeer != null && message.hasOwnProperty("isCredentialPeer"))
+                object.isCredentialPeer = message.isCredentialPeer;
+            if (message.needP2p != null && message.hasOwnProperty("needP2p"))
+                object.needP2p = message.needP2p;
+            if (message.disableP2p != null && message.hasOwnProperty("disableP2p"))
+                object.disableP2p = message.disableP2p;
+            if (message.ipv6PublicAddrProvider != null && message.hasOwnProperty("ipv6PublicAddrProvider"))
+                object.ipv6PublicAddrProvider = message.ipv6PublicAddrProvider;
             return object;
         };
 

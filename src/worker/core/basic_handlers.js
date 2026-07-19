@@ -20,6 +20,56 @@ import { wrapPacket, randomU64String } from './crypto.js';
 
 const WS_OPEN = (typeof WebSocket !== 'undefined' && WebSocket.OPEN) ? WebSocket.OPEN : 1;
 
+// 服务器侧默认的 feature_flag，所有字段显式给出，避免 proto 缺字段导致客户端误判。
+// 关键：disable_p2p=false（服务器不禁用 P2P），need_p2p=false（服务器不主动 P2P）。
+function makeServerDefaultFeatureFlag() {
+  return {
+    isPublicServer: true,
+    avoidRelayData: false,
+    kcpInput: false,
+    noRelayKcp: false,
+    supportConnListSync: false,
+    quicInput: false,
+    noRelayQuic: false,
+    isCredentialPeer: false,
+    needP2p: false,
+    disableP2p: false,
+    ipv6PublicAddrProvider: false,
+  };
+}
+
+// 握手阶段为客户端构造初始 peer_info。此处字段需尽量完整，因为握手后会立即
+// 向其他客户端推送路由更新。feature_flag 必须显式给出 disable_p2p=false，
+// 否则 proto 默认值与"字段缺失"无法区分，对端可能误判为 disable_p2p=true 而拒绝中转。
+function makeInitialClientPeerInfo(peerId, networkLength) {
+  return {
+    peerId,
+    version: 1,
+    lastUpdate: { seconds: Math.floor(Date.now() / 1000), nanos: 0 },
+    instId: { part1: 0, part2: 0, part3: 0, part4: 0 },
+    cost: 1,
+    hostname: '',
+    easytierVersion: '',
+    featureFlag: {
+      isPublicServer: false,
+      avoidRelayData: false,
+      kcpInput: false,
+      noRelayKcp: false,
+      supportConnListSync: false,
+      quicInput: false,
+      noRelayQuic: false,
+      isCredentialPeer: false,
+      needP2p: false,
+      disableP2p: false,
+      ipv6PublicAddrProvider: false,
+    },
+    networkLength: Number(networkLength || 24),
+    peerRouteId: randomU64String(),
+    groups: [],
+    udpStunInfo: 0, // Unknown: 等待客户端 SyncRouteInfo 上报真实值
+  };
+}
+
 // 支持多密码：每个网络名称可以对应多个密码摘要
 const networkDigestRegistry = new Map(); // networkName -> Set of digests
 const networkGroups = new Map(); // networkName:digest -> group metadata
@@ -145,13 +195,9 @@ function handleHandshake(ws, header, payload, types) {
 
     // 更新网络组活动状态
     updateNetworkGroupActivity(groupKey);
-    pm.updatePeerInfo(ws.groupKey, req.myPeerId, {
-      peerId: req.myPeerId,
-      version: 1,
-      lastUpdate: { seconds: Math.floor(Date.now() / 1000), nanos: 0 },
-      instId: { part1: 0, part2: 0, part3: 0, part4: 0 },
-      networkLength: Number(process.env.EASYTIER_NETWORK_LENGTH || 24),
-    });
+    // 使用完整的初始 peer_info，确保 feature_flag 等字段不缺失，
+    // 避免其他客户端因 proto 字段缺失而误判 disable_p2p 状态。
+    pm.updatePeerInfo(ws.groupKey, req.myPeerId, makeInitialClientPeerInfo(req.myPeerId, process.env.EASYTIER_NETWORK_LENGTH));
     // 【修改】：使用动态的公开服务器标志
     pm.setPublicServerFlag(isPublicServer);
     ws.crypto = { enabled: false };
