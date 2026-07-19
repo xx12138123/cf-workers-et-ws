@@ -608,15 +608,45 @@ export class PeerManager {
         bitmap[Math.floor(idx / 8)] |= (1 << (idx % 8));
       };
 
-      // 设置所有 peer 之间的连接性（全连接拓扑）
-      // 这样所有 peer 都会尝试进行 P2P 打洞
+      // 星型拓扑（hub-and-spoke），与 EasyTier 官方 server 行为一致：
+      //   - server 端点(MY_PEER_ID/MY_PEER_ID_WS2) 直连所有连到它的 client
+      //   - client 直连它连接的 server 端点
+      //   - 两个 server 端点互通（同一 worker 的两个逻辑端点）
+      //   - client 之间不直连（通过 server 中转，Dijkstra cost=2 → UI 显示 relay）
+      // 之前用全连接拓扑会导致客户端间显示"直连/p2p"且延迟 0ms（因实际无 PeerConn）。
+      const peersMap = this._getPeersMap(groupKey, false);
+      const SERVER_PEER_IDS = new Set([MY_PEER_ID, MY_PEER_ID_WS2]);
+      const areDirectlyConnected = (pidA, pidB) => {
+        if (pidA === pidB) return false;
+        // 两个 server 端点互通
+        if (SERVER_PEER_IDS.has(pidA) && SERVER_PEER_IDS.has(pidB)) return true;
+        // server 端点 与 client peer：检查 client 是否有活跃 WebSocket 连接到该端点
+        if (SERVER_PEER_IDS.has(pidA) && !SERVER_PEER_IDS.has(pidB)) {
+          const set = peersMap ? peersMap.get(pidB) : null;
+          if (!set) return false;
+          for (const w of set) {
+            if (w.readyState === WS_OPEN && w.serverPeerId === pidA) return true;
+          }
+          return false;
+        }
+        if (SERVER_PEER_IDS.has(pidB) && !SERVER_PEER_IDS.has(pidA)) {
+          return areDirectlyConnected(pidB, pidA);
+        }
+        // 两个 client peer 之间：不直连（数据通过 server 中转）
+        return false;
+      };
+
+      let edgeCount = 0;
       for (let i = 0; i < peerIdVersions.length; i++) {
         for (let j = 0; j < peerIdVersions.length; j++) {
-          setBit(i, j);
+          if (areDirectlyConnected(peerIdVersions[i].peerId, peerIdVersions[j].peerId)) {
+            setBit(i, j);
+            edgeCount++;
+          }
         }
       }
 
-      console.log(`[ConnBitmap] Created full-mesh connectivity for ${peerIdVersions.length} peers`);
+      console.log(`[ConnBitmap] Created hub-spoke topology for ${peerIdVersions.length} peers (${edgeCount} directed edges, star via server endpoints)`);
 
       // --- 替换开始 ---
       // 【核心修复】：引入基于时间戳的全局单调递增版本号，防止 Worker 重启或 P2P 交叉污染导致的版本回退
